@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import type { Bookmark } from '@/types/database.types'
 import toast from 'react-hot-toast'
 import { useBookmarks } from '@/hooks/useBookmarks'
@@ -9,21 +10,55 @@ interface BookmarkListProps {
   userId: string
 }
 
+function getFaviconUrl(url: string): string {
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+  } catch {
+    return ''
+  }
+}
+
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace('www.', '')
+  } catch {
+    return url
+  }
+}
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      delay: i * 0.07,
+      duration: 0.4,
+      ease: 'easeOut',
+    },
+  }),
+  exit: {
+    opacity: 0,
+    scale: 0.85,
+    y: -10,
+    transition: { duration: 0.25, ease: 'easeIn' },
+  },
+}
+
 export function BookmarkList({ userId }: BookmarkListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const { bookmarks, loading: isLoading, deleteBookmark } = useBookmarks(userId)
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this bookmark?')) {
-      return
-    }
-
+    if (!confirm('Delete this bookmark?')) return
     setDeletingId(id)
-
     try {
       await deleteBookmark(id)
       toast.success('Bookmark deleted')
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete bookmark')
       setDeletingId(null)
     }
@@ -31,93 +66,263 @@ export function BookmarkList({ userId }: BookmarkListProps) {
 
   if (isLoading) {
     return (
-      <div className="animate-pulse space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-slate-200 h-24 rounded-xl" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div
+            key={i}
+            style={{
+              height: '140px',
+              borderRadius: '16px',
+              background: 'var(--bg-glass)',
+              border: '1px solid var(--border-subtle)',
+              animation: `pulse 1.5s ${i * 0.1}s ease-in-out infinite alternate`,
+            }}
+          />
         ))}
+        <style>{`
+          @keyframes pulse {
+            from { opacity: 0.4; }
+            to { opacity: 0.8; }
+          }
+        `}</style>
       </div>
     )
   }
 
   if (bookmarks.length === 0) {
     return (
-      <div className="text-center py-12">
-        <svg
-          className="w-16 h-16 text-slate-300 mx-auto mb-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          textAlign: 'center',
+          padding: '4rem 2rem',
+          border: '1px dashed var(--border-subtle)',
+          borderRadius: '20px',
+        }}
+      >
+        <div
+          style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '18px',
+            background: 'var(--bg-glass)',
+            border: '1px solid var(--border-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.25rem',
+          }}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-          />
-        </svg>
-        <h3 className="text-lg font-medium text-slate-700 mb-1">No bookmarks yet</h3>
-        <p className="text-slate-500">Add your first bookmark to get started</p>
-      </div>
+          <svg width="28" height="28" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        </div>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 0.4rem' }}>
+          No bookmarks yet
+        </h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0, fontFamily: 'var(--font-body)' }}>
+          Add your first bookmark above to get started.
+        </p>
+      </motion.div>
     )
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {bookmarks.map((bookmark) => (
-        <div
-          key={bookmark.id}
-          className="group bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer"
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-medium text-slate-900 line-clamp-2 flex-1 pr-2">
-              {bookmark.title}
-            </h3>
-            <button
-              onClick={() => handleDelete(bookmark.id)}
-              disabled={deletingId === bookmark.id}
-              className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-              aria-label={`Delete bookmark: ${bookmark.title}`}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+      <AnimatePresence mode="popLayout">
+        {bookmarks.map((bookmark, i) => {
+          const isHovered = hoveredId === bookmark.id
+          const isDeleting = deletingId === bookmark.id
+          const faviconUrl = getFaviconUrl(bookmark.url)
+          const domain = getDomain(bookmark.url)
+
+          return (
+            <motion.div
+              key={bookmark.id}
+              custom={i}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              layout
+              whileHover={{ y: -4 }}
+              onHoverStart={() => setHoveredId(bookmark.id)}
+              onHoverEnd={() => setHoveredId(null)}
+              style={{
+                borderRadius: '16px',
+                background: isHovered ? 'var(--bg-glass-hover)' : 'var(--bg-glass)',
+                border: `1px solid ${isHovered ? 'var(--border-glass)' : 'var(--border-subtle)'}`,
+                padding: '1.25rem',
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: isHovered
+                  ? '0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,166,35,0.08)'
+                  : '0 4px 16px rgba(0,0,0,0.2)',
+                transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+              }}
             >
-              {deletingId === bookmark.id ? (
-                <div className="w-5 h-5 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" aria-hidden="true" />
-              ) : (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+              {/* Amber shimmer line on hover */}
+              <motion.div
+                animate={{ opacity: isHovered ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  background: 'linear-gradient(90deg, transparent, #f5a623, transparent)',
+                  borderRadius: '16px 16px 0 0',
+                }}
+                aria-hidden="true"
+              />
+
+              {/* Card header: favicon + title + delete */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.875rem' }}>
+                {/* Favicon */}
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
+                  {faviconUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={faviconUrl}
+                      alt=""
+                      width={20}
+                      height={20}
+                      style={{ objectFit: 'contain' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <svg width="16" height="16" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    flex: 1,
+                    lineHeight: 1.3,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {bookmark.title}
+                </h3>
+
+                {/* Delete button */}
+                <motion.button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(bookmark.id)
+                  }}
+                  disabled={isDeleting}
+                  animate={{ opacity: isHovered || isDeleting ? 1 : 0 }}
+                  transition={{ duration: 0.15 }}
+                  aria-label={`Delete bookmark: ${bookmark.title}`}
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--red-soft)',
+                    background: 'var(--red-soft)',
+                    color: 'var(--red-accent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                    flexShrink: 0,
+                    padding: 0,
+                    transition: 'background 0.15s ease',
+                  }}
+                >
+                  {isDeleting ? (
+                    <div
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        border: '1.5px solid rgba(239,68,68,0.3)',
+                        borderTopColor: '#ef4444',
+                        borderRadius: '50%',
+                        animation: 'spin 0.7s linear infinite',
+                      }}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                    </svg>
+                  )}
+                </motion.button>
+              </div>
+
+              {/* URL link */}
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.8rem',
+                  color: isHovered ? 'var(--accent)' : 'var(--text-secondary)',
+                  textDecoration: 'none',
+                  marginBottom: '0.75rem',
+                  transition: 'color 0.2s ease',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                 </svg>
-              )}
-            </button>
-          </div>
+                {domain}
+              </a>
 
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:text-blue-700 truncate block mb-3"
-          >
-            {bookmark.url}
-          </a>
+              {/* Date */}
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-body)' }}>
+                {new Date(bookmark.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
 
-          <p className="text-xs text-slate-500">
-            {new Date(bookmark.created_at).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </p>
-        </div>
-      ))}
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
     </div>
   )
 }

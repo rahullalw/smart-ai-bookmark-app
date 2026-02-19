@@ -16,61 +16,168 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-white/20 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                  />
-                </svg>
-              </div>
-              <h1 className="ml-3 text-xl font-bold text-slate-900">
-                Smart Bookmarks
-              </h1>
-            </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--bg-base)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Grain overlay */}
+      <div className="grain-overlay" aria-hidden="true" />
 
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:block text-sm text-slate-600">
-                {user.email}
-              </div>
-              <LogoutButton />
+      {/* Ambient orbs */}
+      <div className="orb orb-1" aria-hidden="true" />
+      <div className="orb orb-2" aria-hidden="true" />
+
+      {/* Sticky header */}
+      <header
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: 'rgba(13, 15, 20, 0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '0 1.5rem',
+            height: '64px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #f5a623 0%, #f7c56a 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 16px rgba(245,166,35,0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="18" height="18" fill="none" stroke="#0d0f14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
             </div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              Smart Bookmarks
+            </h1>
+          </div>
+
+          {/* Right side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span
+              style={{
+                display: 'none',
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)',
+                fontFamily: 'var(--font-body)',
+                background: 'var(--bg-glass)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '20px',
+                padding: '0.3rem 0.75rem',
+              }}
+              className="sm-show"
+            >
+              {user.email}
+            </span>
+            <LogoutButton />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add Bookmark Section */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Add New Bookmark
+      {/* Main content */}
+      <main
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '2.5rem 1.5rem',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {/* Page heading */}
+        <div style={{ marginBottom: '2.5rem', animation: 'fade-in-up 0.5s ease both' }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '2rem',
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.03em',
+              margin: '0 0 0.4rem 0',
+            }}
+          >
+            Your Collection
           </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-body)' }}>
+            All your saved links, synced in real-time.
+          </p>
+        </div>
+
+        {/* Add Bookmark section */}
+        <div
+          className="glass-card"
+          style={{
+            borderRadius: '20px',
+            padding: '1.75rem',
+            marginBottom: '2rem',
+            borderTop: '2px solid var(--accent)',
+            animation: 'fade-in-up 0.5s 0.1s ease both',
+            opacity: 0,
+            animationFillMode: 'forwards',
+          }}
+        >
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              color: 'var(--accent)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              margin: '0 0 1.25rem 0',
+            }}
+          >
+            + Add New Bookmark
+          </h3>
           <BookmarkForm userId={user.id} />
         </div>
 
-        {/* Bookmarks List Section */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-6">
-            Your Bookmarks
-          </h2>
+        {/* Bookmarks list */}
+        <div style={{ animation: 'fade-in-up 0.5s 0.2s ease both', opacity: 0, animationFillMode: 'forwards' }}>
           <BookmarkList userId={user.id} />
         </div>
       </main>
+
+      <style>{`
+        @media (min-width: 640px) {
+          .sm-show { display: block !important; }
+        }
+      `}</style>
     </div>
   )
 }
